@@ -87,7 +87,6 @@ Based on the schema and configuration present, the design is:
 - Mail: Gmail SMTP sender account.
 - `schedule.fixedRate: 1000000` — intended interval (ms) for the future reminder-dispatch job.
 
-> ⚠️ **Security note:** `application.yml` currently contains a real database password and a real Gmail SMTP username + app password, committed in plain text. Before pushing this repo anywhere public, these should be removed and replaced with environment variables / a `.gitignore`d local config, and the exposed Gmail app password should be revoked and regenerated.
 
 ## Running Locally
 
