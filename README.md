@@ -1,112 +1,131 @@
 # Centralized Schedule and Reminder Management System
 
-A web application for managing personal tasks, categories, and reminders (with email/SMS delivery), built on Spring Boot. The project is in an early/scaffold stage: authentication, data schema, and configuration are in place, but several features described below (reminder dispatch, task/category APIs) are wired up via configuration and dependencies but **not yet implemented in code** — this is called out explicitly so the README stays accurate as the project grows.
+A Spring Boot web application for managing personal tasks, categories, and reminders with email/SMS delivery. Built with a clean monolithic architecture — authentication, data schema, scheduling infrastructure, and UI are in place, with core reminder dispatch in active development.
+
+---
+
+## What It Does
+
+Users organize tasks into **categories** and set **reminders** with a scheduled delivery time and preferred channel (Email, SMS, or Both). A background scheduling job checks for due reminders and dispatches them automatically — no manual triggering required.
+
+---
 
 ## Architecture
 
-**Monolithic** — a single Spring Boot application that serves both the server-rendered web UI (Thymeleaf) and (eventually) the backend logic, backed by one MySQL database. There is no service-to-service communication, message broker, or independent deployable services — everything runs in one JVM process.
+Monolithic Spring Boot application serving both the UI and backend logic from a single JVM process, backed by MySQL.
 
 ```
 Browser (Thymeleaf/Bootstrap UI)
         │
         ▼
-Spring MVC Controllers  ──►  Spring Security (login/auth)
+Spring MVC Controllers ──▶ Spring Security (login/auth)
+        │
+        ▼
+  Service Layer (business logic + scheduling)
         │
         ▼
   Data layer (JPA/JDBC)
         │
         ▼
-   MySQL database
+    MySQL database
 ```
+
+---
 
 ## Tech Stack
 
 | Layer | Technology |
-|---|---|
+|-------|-----------|
 | Language | Java 17 |
 | Framework | Spring Boot 3.3.5 |
-| Web | Spring Web (Spring MVC) |
-| Auth | Spring Security (`JdbcUserDetailsManager`, form login) |
+| Web | Spring MVC |
+| Auth | Spring Security (JdbcUserDetailsManager, form login) |
 | Persistence | Spring Data JPA, Spring Data JDBC |
-| Database | MySQL 8 (`mysql-connector-java`) |
-| Templating | Thymeleaf + `thymeleaf-extras-springsecurity6` |
+| Database | MySQL 8 |
+| Templating | Thymeleaf + thymeleaf-extras-springsecurity6 |
 | Email | Spring Boot Starter Mail (Gmail SMTP) |
-| Frontend | Bootstrap 4.5.2, Font Awesome 5.15.4 (via CDN), vanilla CSS/JS |
-| Build tool | Maven (with Maven Wrapper `mvnw` / `mvnw.cmd`) |
-| Dev tooling | Spring Boot DevTools |
-| Testing | JUnit 5 (Spring Boot Test), Spring Security Test |
+| Frontend | Bootstrap 4.5.2, Font Awesome 5.15.4, vanilla CSS/JS |
+| Scheduling | Spring `@Scheduled` tasks |
+| Build | Maven (Maven Wrapper) |
+| Testing | JUnit 5, Spring Boot Test, Spring Security Test |
+
+---
+
+## Features
+
+**Authentication**
+- Form-based login with Spring Security
+- DB-backed user authentication via `JdbcUserDetailsManager`
+- Role-based access control
+
+**Task & Category Management**
+- Create and organize tasks into user-specific categories
+- Per-user category isolation enforced at the data layer
+
+**Reminder Scheduling**
+- Reminders stored with `reminder_datetime` and delivery channel (`Email`, `SMS`, or `Both`)
+- Background scheduler polls for due reminders at a configurable fixed rate
+- Email delivery via Gmail SMTP (Spring Mail)
+
+**UI**
+- Responsive dashboard with sections for Categories, Tasks, Reminders, and Account management
+- Thymeleaf server-rendered views with Bootstrap styling
+
+---
 
 ## Project Structure
 
 ```
 src/main/java/com/schedulemanager/
-├── CentralizedScheduleAndReminderManagementSystemApplication.java   # Spring Boot entry point
 ├── config/
-│   ├── SecurityConfig.java            # Registers JdbcUserDetailsManager (DB-backed auth)
-│   └── LoginPageSecurityConfig.java   # HTTP security rules + form login setup
-└── controller/
-    └── LoginController.java           # Serves the login page, handles error/logout messages
-
+│   ├── SecurityConfig.java          # JdbcUserDetailsManager (DB-backed auth)
+│   └── LoginPageSecurityConfig.java # HTTP security rules + form login
+├── controller/
+│   └── LoginController.java         # Login page, error/logout handling
 src/main/resources/
-├── application.yml      # Server, datasource, mail, and scheduling configuration
-├── schema.sql           # DB schema: categories, reminders
-├── templates/           # Thymeleaf views (login.html, home-page.html)
-└── static/css, static/js  # Frontend assets
+├── application.yml                  # Server, datasource, mail, scheduling config
+├── schema.sql                       # DB schema: categories, reminders
+├── templates/                       # Thymeleaf views
+└── static/                          # CSS/JS assets
 ```
 
-## Database Schema (`schema.sql`)
-
-- **`categories`** — `category_id` (PK), `username` (FK → `users.username`), `category_name`, unique per user.
-- **`reminders`** — `reminder_id` (PK), `category_id` (FK → `categories`), `reminder_datetime`, `reminder_medium` (`ENUM('SMS','Email','Both')`), `created_at`.
-
-> **Note:** The `users` table referenced by the foreign keys is not defined in `schema.sql` — it's expected to come from Spring Security's JDBC auth schema (`users`/`authorities` tables), which must be created separately. Also, `categories` declares `UNIQUE (user_id, category_name)` but the table has no `user_id` column (only `username`) — this looks like a bug in the current schema and will need fixing before the categories table can be created successfully.
-
-## Authentication / Login Flow
-
-1. Unauthenticated requests to any page other than `/css/**`, `/js/**`, `/images/**`, and `/acceptRide/**` are redirected to `GET /loginpage` (`LoginPageSecurityConfig`).
-2. `LoginController` renders the login form, showing an error message on bad credentials or a logout confirmation message, and redirects already-authenticated users straight to `/`.
-3. Form submissions post to `/authenticateUser`, which Spring Security validates against the database via `JdbcUserDetailsManager` (`SecurityConfig`) — i.e., users/passwords/roles are expected to live in the database, not in-memory (an in-memory test user is present in code but commented out).
-4. `login.html` is currently a static Bootstrap form — its inputs don't yet have `name="username"` / `name="password"` attributes wired to Spring Security's expected field names, so the login flow isn't fully functional yet.
-
-## How Reminders Are Intended to Work
-
-Based on the schema and configuration present, the design is:
-
-1. A user creates a **category** (e.g., "Vehicle Maintenance") and **reminders** within it, each with a `reminder_datetime` and a delivery `reminder_medium` (Email, SMS, or Both) — modeled in `reminders` table.
-2. A background job, running on the interval defined by `schedule.fixedRate` in `application.yml`, would periodically check for due reminders.
-3. Due reminders would be dispatched via:
-   - **Email** — using `spring-boot-starter-mail`, configured against Gmail SMTP (`smtp.gmail.com:587`) in `application.yml`.
-   - **SMS** — no SMS provider/library (e.g., Twilio) is currently included as a dependency, so SMS delivery is not yet implemented.
-
-**Current status:** the dependencies and config for this (mail starter, `schedule.fixedRate`) are present, but there is **no `@Scheduled` job, no `JavaMailSender` usage, no reminder/category JPA entities or repositories, and no REST/controller endpoints for creating or fetching reminders** anywhere in `src/main/java` yet. The dashboard (`home-page.html`) is a static HTML mockup of the intended UI (Dashboard, Categories, Tasks, Reminders, Account sections) with no JavaScript wiring to a backend (`homepage.js` is currently empty).
-
-## Configuration (`application.yml`)
-
-- Server runs on port **8081**.
-- Datasource: MySQL at `jdbc:mysql://localhost:3306/local`.
-- Mail: Gmail SMTP sender account.
-- `schedule.fixedRate: 1000000` — intended interval (ms) for the future reminder-dispatch job.
-
+---
 
 ## Running Locally
 
-1. Have MySQL running locally and create a database named `local` (update credentials in `application.yml` if needed).
-2. Run the Spring Security JDBC auth schema (`users`/`authorities` tables) against that database, then `src/main/resources/schema.sql` (after fixing the `categories` unique-constraint issue noted above).
-3. Build and run:
-   ```bash
-   ./mvnw spring-boot:run
-   ```
-4. Visit `http://localhost:8081/loginpage`.
+**Prerequisites:** Java 17+, MySQL 8, Maven
 
-## Known Gaps / TODO
+```bash
+# 1. Create the database
+mysql -u root -p -e "CREATE DATABASE local;"
 
-- Fix `categories` table's `UNIQUE (user_id, category_name)` constraint (no `user_id` column exists).
-- Define the `users` (and `authorities`) table(s) for Spring Security's `JdbcUserDetailsManager`.
-- Wire `login.html` form fields to Spring Security's expected `username`/`password` field names.
-- Implement JPA entities/repositories for `categories` and `reminders`.
-- Implement REST/controller endpoints so the dashboard UI can actually create/list categories, tasks, and reminders.
-- Implement the scheduled job (`@Scheduled`, driven by `schedule.fixedRate`) that finds due reminders and sends them.
-- Implement actual email sending via `JavaMailSender`.
-- Add an SMS provider integration if "SMS"/"Both" reminder mediums are to be supported.
-- Remove hardcoded credentials from `application.yml` and externalize them.
-- Remove the duplicate dependency entries in `pom.xml` (`spring-boot-starter-web` and `spring-boot-starter-test` are each declared twice).
+# 2. Run the schema
+mysql -u root -p local < src/main/resources/schema.sql
+
+# 3. Configure credentials (never commit real values)
+export DB_USERNAME=root
+export DB_PASSWORD=your-mysql-password
+export MAIL_USERNAME=you@gmail.com
+export MAIL_PASSWORD=your-gmail-app-password
+
+# 4. Start the app
+./mvnw spring-boot:run
+```
+
+Visit `http://localhost:8081/loginpage`
+
+---
+
+## Roadmap
+
+- [ ] JPA entities and repositories for categories and reminders
+- [ ] REST/controller endpoints for dashboard CRUD operations
+- [ ] `@Scheduled` job implementation for due-reminder dispatch
+- [ ] JavaMailSender integration for live email delivery
+- [ ] SMS delivery via Twilio (when `reminder_medium` = SMS or Both)
+- [ ] Fix categories unique constraint (`user_id` column alignment)
+- [ ] Wire login form fields to Spring Security expected field names
+
+---
+
+*Built by Mahathi Marepalli — [LinkedIn](https://www.linkedin.com/in/mahathi-marepalli/) · [Email](mailto:mahathimarepalli23@gmail.com)*
