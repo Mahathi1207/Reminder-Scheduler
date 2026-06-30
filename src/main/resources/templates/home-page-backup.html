@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule Management System</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="css/homepage.css" th:href="@{/css/homepage.css}">
+    <script type="text/javascript" th:src="@{/js/homepage.js}" defer></script>
+</head>
+<body>
+
+<header class="bg-secondary text-white text-center py-4">
+    <h1>Schedule Management System</h1>
+    <p>Efficiently manage your schedules and reminders</p>
+</header>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-warning">
+    <div class="container">
+        <a class="navbar-brand" href="#">Schedule Management</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="#dashboard">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="#categories">Categories</a></li>
+                <li class="nav-item"><a class="nav-link" href="#tasks">Tasks</a></li>
+                <li class="nav-item"><a class="nav-link" href="#reminders">Reminders</a></li>
+                <li class="nav-item"><a class="nav-link" href="#account">Account</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container my-4">
+    <section id="dashboard" class="bg-light border rounded p-4 mb-4">
+        <h2 class="section-title">Dashboard</h2>
+        <p>Welcome to the Schedule Management System! Here, you can manage your tasks and reminders efficiently. Use the navigation above to access different sections.</p>
+    </section>
+
+    <section id="categories" class="bg-light border rounded p-4 mb-4">
+        <h2 class="section-title">Categories</h2>
+        <ul class="list-group mb-3">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                Vehicle Maintenance
+                <button class="btn btn-danger btn-sm" type="button" data-toggle="tooltip" title="Delete">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </li>
+            <li class="list-group-item">Healthcare Appointments</li>
+            <li class="list-group-item">Family Commitments</li>
+        </ul>
+        <div class="form-group">
+            <label for="new-category">Add New Category:</label>
+            <input type="text" class="form-control" id="new-category" placeholder="Enter category name" />
+            <button class="btn btn-primary mt-2">Add Category</button>
+        </div>
+    </section>
+
+    <section id="tasks" class="bg-light border rounded p-4 mb-4">
+        <h2 class="section-title">Tasks</h2>
+        <ul class="list-group mb-3">
+            <li class="list-group-item">Annual Car Registration - Due: 2024-12-01</li>
+            <li class="list-group-item">Dental Check-Up - Due: 2024-11-10</li>
+            <li class="list-group-item">Tire Rotation - Due: 2024-11-15</li>
+        </ul>
+        <div class="form-group">
+            <label for="task-category">Category:</label>
+            <select class="form-control" id="task-category">
+                <option value="vehicle">Vehicle Maintenance</option>
+                <option value="healthcare">Healthcare Appointments</option>
+                <option value="family">Family Commitments</option>
+            </select>
+            <label for="task-name">Task Name:</label>
+            <input type="text" class="form-control" id="task-name" placeholder="Enter task name" />
+            <label for="task-date">Due Date:</label>
+            <input type="date" class="form-control" id="task-date" />
+            <label for="task-details">Task Details:</label>
+            <textarea class="form-control" id="task-details" placeholder="Enter task details"></textarea>
+            <button class="btn btn-primary mt-2">Add Task</button>
+        </div>
+    </section>
+
+    <section id="reminders" class="bg-light border rounded p-4 mb-4">
+        <h2 class="section-title">Reminders</h2>
+        <ul class="list-group mb-3">
+            <li class="list-group-item">Oil Change - Reminder set for 2024-11-01</li>
+            <li class="list-group-item">Physical Exam - Reminder set for 2024-11-05</li>
+        </ul>
+        <div class="form-group">
+            <label for="reminder-task">Task:</label>
+            <select class="form-control" id="reminder-task">
+                <option value="oil-change">Oil Change</option>
+                <option value="physical-exam">Physical Exam</option>
+            </select>
+            <label for="reminder-date">Reminder Date:</label>
+            <input type="date" class="form-control" id="reminder-date" />
+            <button class="btn btn-primary mt-2">Set Reminder</button>
+        </div>
+    </section>
+
+    <section id="account" class="bg-light border rounded p-4 mb-4">
+        <h2 class="section-title">User Account</h2>
+        <p>Manage your account settings and preferences here.</p>
+        <div class="form-group">
+            <label for="user-name">Name:</label>
+            <input type="text" class="form-control" id="user-name" placeholder="Enter your name" />
+            <label for="user-email">Email:</label>
+            <input type="email" class="form-control" id="user-email" placeholder="Enter your email" />
+            <button class="btn btn-primary mt-2">Update Account</button>
+        </div>
+    </section>
+</div>
+
+<footer class="bg-secondary text-white text-center py-3">
+    <p>&copy; 2024 Schedule Management System. All rights reserved.</p>
+</footer>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+</body>
+</html>
